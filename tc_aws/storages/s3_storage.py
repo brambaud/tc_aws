@@ -141,7 +141,7 @@ class Storage(AwsStorage, BaseStorage):
 
         try:
             file = await super(Storage, self).get(path)
-        except BotoCoreError:
+        except ClientError:
             return None
 
         async with file['Body'] as stream:
