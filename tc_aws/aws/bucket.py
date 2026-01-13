@@ -73,6 +73,15 @@ class Bucket(object):
             self._client = None
             self._client_context = None
 
+    async def ping(self):
+        try:
+            client = await self._get_client()
+            await client.head_bucket(Bucket=self._bucket)
+        except Exception as err:
+            logger.warning('Bucket "%s" ping failed: "%s"', self._bucket, err)
+            return False
+        return True
+
     async def exists(self, path):
         """
         Checks if an object exists at a given path
@@ -84,7 +93,7 @@ class Bucket(object):
                 Bucket=self._bucket,
                 Key=self._clean_key(path),
             )
-        except Exception:
+        except Exception as e:
             return False
         return True
 
