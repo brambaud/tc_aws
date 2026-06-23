@@ -4,6 +4,8 @@
 # Use of this source code is governed by the MIT license that can be
 # found in the LICENSE file.
 
+import asyncio
+
 import aiobotocore.session
 from botocore.client import Config
 from thumbor.utils import logger
@@ -56,6 +58,7 @@ class Bucket(object):
         self._session = aiobotocore.session.get_session()
         self._client = None
         self._client_context = None
+        self._client_lock = asyncio.Lock()
 
         self._credential_provider = None
         if role_arn:
@@ -73,23 +76,24 @@ class Bucket(object):
 
     async def _get_client(self):
         """Get or create the client, refreshing STS credentials if needed."""
-        if self._credential_provider is not None and self._credential_provider.needs_refresh():
-            await self._close_client()
+        async with self._client_lock:
+            if self._credential_provider is not None and self._credential_provider.needs_refresh():
+                await self._close_client()
 
-        if self._client is None:
-            kwargs = dict(
-                region_name=self._region,
-                endpoint_url=self._endpoint,
-                config=self._config,
-            )
-            if self._credential_provider is not None:
-                creds = await self._credential_provider.get_credentials()
-                kwargs['aws_access_key_id'] = creds['AccessKeyId']
-                kwargs['aws_secret_access_key'] = creds['SecretAccessKey']
-                kwargs['aws_session_token'] = creds['SessionToken']
+            if self._client is None:
+                kwargs = dict(
+                    region_name=self._region,
+                    endpoint_url=self._endpoint,
+                    config=self._config,
+                )
+                if self._credential_provider is not None:
+                    creds = await self._credential_provider.get_credentials()
+                    kwargs['aws_access_key_id'] = creds['AccessKeyId']
+                    kwargs['aws_secret_access_key'] = creds['SecretAccessKey']
+                    kwargs['aws_session_token'] = creds['SessionToken']
 
-            self._client_context = self._session.create_client('s3', **kwargs)
-            self._client = await self._client_context.__aenter__()
+                self._client_context = self._session.create_client('s3', **kwargs)
+                self._client = await self._client_context.__aenter__()
         return self._client
 
     async def _close_client(self):
