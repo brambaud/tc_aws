@@ -121,6 +121,27 @@ TC_AWS_RANDOMIZE_KEYS=False # Adds some randomization in the S3 keys for the Sto
 TC_AWS_ROOT_IMAGE_NAME='root_image' # Sets a default name for requested images ending with a trailing /. Those images will be stored in result_storage and storage under the name set in this configuration.
 ```
 
+### STS Assume Role settings
+
+These settings are optional. When `TC_AWS_ROLE_ARN` is not set, tc_aws uses the default AWS credential chain (environment variables, IAM instance profile, etc.) as before.
+
+When `TC_AWS_ROLE_ARN` is set, tc_aws calls STS `AssumeRole` before each S3 operation and caches the temporary credentials until they are close to expiry (within 5 minutes). This allows Thumbor to access S3 buckets in other AWS accounts or via role delegation.
+
+```.ini
+# IAM role ARN to assume for S3 access. Enables STS assume role when set.
+TC_AWS_ROLE_ARN=''
+
+# Session name used in STS assume role calls.
+TC_AWS_ROLE_SESSION_NAME='thumbor-session'
+
+# External ID for cross-account role assumption (optional).
+TC_AWS_ROLE_EXTERNAL_ID=''
+
+# Duration in seconds for the assumed role credentials.
+# When not set, AWS applies its own default (currently 3600).
+TC_AWS_ASSUME_ROLE_DURATION_SECONDS=None
+```
+
 ## Troubleshooting
 
 ### Check your configuration

@@ -31,8 +31,16 @@ class AwsStorage():
         :return: The bucket
         :rtype: Bucket
         """
-        return Bucket(self._get_config('BUCKET'), self.context.config.get('TC_AWS_REGION'),
-                      self.context.config.get('TC_AWS_ENDPOINT'))
+        role_arn = self.context.config.get('TC_AWS_ROLE_ARN') or None
+        return Bucket(
+            self._get_config('BUCKET'),
+            self.context.config.get('TC_AWS_REGION'),
+            self.context.config.get('TC_AWS_ENDPOINT'),
+            role_arn=role_arn,
+            role_session_name=self.context.config.get('TC_AWS_ROLE_SESSION_NAME'),
+            role_external_id=self.context.config.get('TC_AWS_ROLE_EXTERNAL_ID') or None,
+            assume_role_duration=self.context.config.get('TC_AWS_ASSUME_ROLE_DURATION_SECONDS'),
+        )
 
     def __init__(self, context, config_prefix):
         """

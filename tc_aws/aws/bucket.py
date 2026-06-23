@@ -9,13 +9,15 @@ from botocore.client import Config
 from thumbor.utils import logger
 from thumbor.engines import BaseEngine
 
+from .credentials import AssumeRoleCredentialProvider
+
 
 class Bucket(object):
     _instances = {}
 
     @staticmethod
-    def __new__(cls, bucket, region, endpoint, *args, **kwargs):
-        key = (bucket, region, endpoint) + args + tuple(kwargs.items())
+    def __new__(cls, bucket, region, endpoint, max_retry=None, role_arn=None, **kwargs):
+        key = (bucket, region, endpoint, role_arn)
 
         if not cls._instances.get(key):
             cls._instances[key] = super(Bucket, cls).__new__(cls)
@@ -25,7 +27,9 @@ class Bucket(object):
     """
     This handles all communication with AWS API
     """
-    def __init__(self, bucket, region, endpoint, max_retry=None):
+    def __init__(self, bucket, region, endpoint, max_retry=None, role_arn=None,
+                 role_session_name=None, role_external_id=None,
+                 assume_role_duration=None):
         """
         Constructor
         :param string bucket: The bucket name
@@ -36,11 +40,11 @@ class Bucket(object):
         # Only initialize once due to singleton pattern
         if hasattr(self, '_initialized'):
             return
-            
+
         self._bucket = bucket
         self._region = region
         self._endpoint = endpoint
-        
+
         self._config = None
         if max_retry is not None:
             self._config = Config(
@@ -48,21 +52,43 @@ class Bucket(object):
                     max_attempts=max_retry
                 )
             )
-        
+
         self._session = aiobotocore.session.get_session()
         self._client = None
         self._client_context = None
+
+        self._credential_provider = None
+        if role_arn:
+            self._credential_provider = AssumeRoleCredentialProvider(
+                session=self._session,
+                role_arn=role_arn,
+                role_session_name=role_session_name,
+                external_id=role_external_id or None,
+                duration_seconds=assume_role_duration,
+                region=region,
+                endpoint=endpoint,
+            )
+
         self._initialized = True
 
     async def _get_client(self):
-        """Get or create the client"""
+        """Get or create the client, refreshing STS credentials if needed."""
+        if self._credential_provider is not None and self._credential_provider.needs_refresh():
+            await self._close_client()
+
         if self._client is None:
-            self._client_context = self._session.create_client(
-                's3',
+            kwargs = dict(
                 region_name=self._region,
                 endpoint_url=self._endpoint,
-                config=self._config
+                config=self._config,
             )
+            if self._credential_provider is not None:
+                creds = await self._credential_provider.get_credentials()
+                kwargs['aws_access_key_id'] = creds['AccessKeyId']
+                kwargs['aws_secret_access_key'] = creds['SecretAccessKey']
+                kwargs['aws_session_token'] = creds['SessionToken']
+
+            self._client_context = self._session.create_client('s3', **kwargs)
             self._client = await self._client_context.__aenter__()
         return self._client
 
