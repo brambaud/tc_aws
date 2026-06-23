@@ -56,8 +56,8 @@ class AssumeRoleCredentialProvider:
 
             try:
                 response = await sts.assume_role(**kwargs)
-            except Exception as exc:
-                logger.error('STS assume_role failed for %s: %s', self._role_arn, exc)
+            except Exception:
+                logger.exception('STS assume_role failed for %s', self._role_arn)
                 raise
 
         self._credentials = response['Credentials']
