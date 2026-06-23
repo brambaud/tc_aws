@@ -26,3 +26,4 @@ Config.define('TC_AWS_ROLE_ARN', '', 'IAM role ARN to assume for S3 access (enab
 Config.define('TC_AWS_ROLE_SESSION_NAME', 'thumbor-session', 'Session name for STS assume role', 'S3')
 Config.define('TC_AWS_ROLE_EXTERNAL_ID', '', 'External ID for STS assume role (optional, for cross-account access)', 'S3')
 Config.define('TC_AWS_ASSUME_ROLE_DURATION_SECONDS', None, 'Duration in seconds for assumed role credentials (None lets AWS use its default of 3600)', 'S3')
+Config.define('TC_AWS_STS_ENDPOINT', None, 'Custom STS endpoint URL (defaults to the AWS global STS endpoint)', 'S3')

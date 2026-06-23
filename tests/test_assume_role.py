@@ -74,7 +74,7 @@ class AssumeRoleBucketTestCase(S3MockedAsyncTestCase):
 
         role_bucket = Bucket(
             s3_bucket, _REGION, _MOCK_ENDPOINT,
-            role_arn=_ROLE_ARN, role_session_name='thumbor-session',
+            role_arn=_ROLE_ARN, role_session_name='thumbor-session', sts_endpoint=_MOCK_ENDPOINT,
         )
         response = await role_bucket.get('test-key.jpg')
         async with response['Body'] as stream:
@@ -85,7 +85,7 @@ class AssumeRoleBucketTestCase(S3MockedAsyncTestCase):
     async def test_credentials_are_cached(self):
         role_bucket = Bucket(
             s3_bucket, _REGION, _MOCK_ENDPOINT,
-            role_arn=_ROLE_ARN, role_session_name='thumbor-session',
+            role_arn=_ROLE_ARN, role_session_name='thumbor-session', sts_endpoint=_MOCK_ENDPOINT,
         )
         provider = role_bucket._credential_provider
 
@@ -98,7 +98,7 @@ class AssumeRoleBucketTestCase(S3MockedAsyncTestCase):
     async def test_credentials_refresh_on_expiry(self):
         role_bucket = Bucket(
             s3_bucket, _REGION, _MOCK_ENDPOINT,
-            role_arn=_ROLE_ARN, role_session_name='thumbor-session',
+            role_arn=_ROLE_ARN, role_session_name='thumbor-session', sts_endpoint=_MOCK_ENDPOINT,
         )
         provider = role_bucket._credential_provider
 
@@ -130,6 +130,8 @@ class AssumeRoleBucketTestCase(S3MockedAsyncTestCase):
         bucket = Bucket(
             s3_bucket, _REGION, _MOCK_ENDPOINT,
             role_arn='not-a-valid-arn',
+            role_session_name='thumbor-session',
+            sts_endpoint=_MOCK_ENDPOINT,
         )
         with self.assertRaises(Exception):
             await bucket._get_client()

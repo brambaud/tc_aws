@@ -40,6 +40,7 @@ class AwsStorage():
             role_session_name=self.context.config.get('TC_AWS_ROLE_SESSION_NAME'),
             role_external_id=self.context.config.get('TC_AWS_ROLE_EXTERNAL_ID') or None,
             assume_role_duration=self.context.config.get('TC_AWS_ASSUME_ROLE_DURATION_SECONDS'),
+            sts_endpoint=self.context.config.get('TC_AWS_STS_ENDPOINT'),
         )
 
     def __init__(self, context, config_prefix):

@@ -16,14 +16,14 @@ class AssumeRoleCredentialProvider:
     """Provides temporary credentials via STS assume role with caching."""
 
     def __init__(self, session, role_arn, role_session_name, external_id=None,
-                 duration_seconds=None, region=None, endpoint=None):
+                 duration_seconds=None, region=None, sts_endpoint=None):
         self._session = session
         self._role_arn = role_arn
         self._role_session_name = role_session_name
         self._external_id = external_id
         self._duration_seconds = duration_seconds  # None means let AWS use its default
         self._region = region
-        self._endpoint = endpoint
+        self._sts_endpoint = sts_endpoint
         self._credentials = None
         self._expiration = None
 
@@ -43,7 +43,7 @@ class AssumeRoleCredentialProvider:
         async with self._session.create_client(
             'sts',
             region_name=self._region,
-            endpoint_url=self._endpoint,
+            endpoint_url=self._sts_endpoint,
         ) as sts:
             kwargs = dict(
                 RoleArn=self._role_arn,

@@ -31,7 +31,7 @@ class Bucket(object):
     """
     def __init__(self, bucket, region, endpoint, max_retry=None, role_arn=None,
                  role_session_name=None, role_external_id=None,
-                 assume_role_duration=None):
+                 assume_role_duration=None, sts_endpoint=None):
         """
         Constructor
         :param string bucket: The bucket name
@@ -69,7 +69,7 @@ class Bucket(object):
                 external_id=role_external_id,
                 duration_seconds=assume_role_duration,
                 region=region,
-                endpoint=endpoint,
+                sts_endpoint=sts_endpoint,
             )
 
         self._initialized = True
