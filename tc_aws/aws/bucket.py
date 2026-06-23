@@ -66,7 +66,7 @@ class Bucket(object):
                 session=self._session,
                 role_arn=role_arn,
                 role_session_name=role_session_name,
-                external_id=role_external_id or None,
+                external_id=role_external_id,
                 duration_seconds=assume_role_duration,
                 region=region,
                 endpoint=endpoint,
