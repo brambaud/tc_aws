@@ -7,6 +7,7 @@
 import json
 from datetime import datetime, timezone, timedelta
 
+import botocore.exceptions
 import botocore.session
 from tornado.testing import gen_test
 
@@ -23,7 +24,9 @@ _REGION = 'us-east-1'
 
 
 def _create_iam_role():
-    """Create an IAM role via moto using botocore."""
+    # Sync botocore is intentional: setUp() is a synchronous method so async
+    # clients are not available here. Moto shares state between the sync and
+    # async paths, so resources created here are visible to the async tests.
     client = botocore.session.get_session().create_client(
         'iam',
         region_name=_REGION,
@@ -133,7 +136,7 @@ class AssumeRoleBucketTestCase(S3MockedAsyncTestCase):
             role_session_name='thumbor-session',
             sts_endpoint=_MOCK_ENDPOINT,
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(botocore.exceptions.ParamValidationError):
             await bucket._get_client()
 
     @gen_test
