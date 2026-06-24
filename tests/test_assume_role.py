@@ -174,7 +174,9 @@ class PerServiceAssumeRoleTestCase(S3MockedAsyncTestCase):
         Bucket._instances = {}
 
     def _seed_s3(self, key, body=IMAGE_BYTES):
-        """Upload an object via the sync botocore client (no aiobotocore needed)."""
+        # Sync botocore is intentional: setUp() is synchronous so async clients are
+        # unavailable. Moto shares state between sync and async, so objects seeded
+        # here are visible to the async test methods.
         client = botocore.session.get_session().create_client(
             's3', endpoint_url=_MOCK_ENDPOINT
         )
@@ -243,7 +245,9 @@ class PerServiceAssumeRoleTestCase(S3MockedAsyncTestCase):
             TC_AWS_ENDPOINT=_MOCK_ENDPOINT,
         )
         ctx = Context(config=conf, server=get_server('ACME-SEC'))
-        # No role params set: the Bucket created by storage must have no credential provider.
+        # _credential_provider is None when no role ARN is configured. This is the
+        # internal signal that the Bucket uses the default AWS credential chain instead
+        # of STS assume-role, and it is stable enough to assert on directly.
         bucket = Storage(ctx).storage
         self.assertIsNone(bucket._credential_provider)
 

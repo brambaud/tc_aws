@@ -39,17 +39,12 @@ async def load(context, url):
                               error=LoaderResult.ERROR_NOT_FOUND)
         return result
 
-    role_cfg = _get_role_config(context)
     loader = Bucket(
         bucket,
         context.config.get('TC_AWS_REGION'),
         context.config.get('TC_AWS_ENDPOINT'),
         context.config.get('TC_AWS_MAX_RETRY'),
-        role_arn=role_cfg['role_arn'],
-        role_session_name=role_cfg['role_session_name'],
-        role_external_id=role_cfg['role_external_id'],
-        assume_role_duration=role_cfg['assume_role_duration'],
-        sts_endpoint=role_cfg['sts_endpoint'],
+        **_get_role_config(context),
     )
 
     result = LoaderResult()
