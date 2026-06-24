@@ -24,6 +24,15 @@ class AwsStorage():
         """
         return self.context.config.AUTO_WEBP and hasattr(self.context, 'request') and self.context.request.accepts_webp
 
+    def _get_role_config(self):
+        return dict(
+            role_arn=self._get_config('ROLE_ARN') or None,
+            role_session_name=self._get_config('ROLE_SESSION_NAME'),
+            role_external_id=self._get_config('ROLE_EXTERNAL_ID') or None,
+            assume_role_duration=self._get_config('ASSUME_ROLE_DURATION_SECONDS'),
+            sts_endpoint=self._get_config('STS_ENDPOINT'),
+        )
+
     @property
     def storage(self):
         """
@@ -31,16 +40,16 @@ class AwsStorage():
         :return: The bucket
         :rtype: Bucket
         """
-        role_arn = self.context.config.get('TC_AWS_ROLE_ARN') or None
+        role_cfg = self._get_role_config()
         return Bucket(
             self._get_config('BUCKET'),
             self.context.config.get('TC_AWS_REGION'),
             self.context.config.get('TC_AWS_ENDPOINT'),
-            role_arn=role_arn,
-            role_session_name=self.context.config.get('TC_AWS_ROLE_SESSION_NAME'),
-            role_external_id=self.context.config.get('TC_AWS_ROLE_EXTERNAL_ID') or None,
-            assume_role_duration=self.context.config.get('TC_AWS_ASSUME_ROLE_DURATION_SECONDS'),
-            sts_endpoint=self.context.config.get('TC_AWS_STS_ENDPOINT'),
+            role_arn=role_cfg['role_arn'],
+            role_session_name=role_cfg['role_session_name'],
+            role_external_id=role_cfg['role_external_id'],
+            assume_role_duration=role_cfg['assume_role_duration'],
+            sts_endpoint=role_cfg['sts_endpoint'],
         )
 
     def __init__(self, context, config_prefix):

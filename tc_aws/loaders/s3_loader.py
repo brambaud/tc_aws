@@ -13,6 +13,16 @@ from thumbor.loaders import LoaderResult
 from ..aws.bucket import Bucket
 
 
+def _get_role_config(context):
+    return dict(
+        role_arn=context.config.get('TC_AWS_LOADER_ROLE_ARN') or None,
+        role_session_name=context.config.get('TC_AWS_LOADER_ROLE_SESSION_NAME'),
+        role_external_id=context.config.get('TC_AWS_LOADER_ROLE_EXTERNAL_ID') or None,
+        assume_role_duration=context.config.get('TC_AWS_LOADER_ASSUME_ROLE_DURATION_SECONDS'),
+        sts_endpoint=context.config.get('TC_AWS_LOADER_STS_ENDPOINT'),
+    )
+
+
 async def load(context, url):
     """
     Loads image
@@ -29,11 +39,17 @@ async def load(context, url):
                               error=LoaderResult.ERROR_NOT_FOUND)
         return result
 
+    role_cfg = _get_role_config(context)
     loader = Bucket(
         bucket,
         context.config.get('TC_AWS_REGION'),
         context.config.get('TC_AWS_ENDPOINT'),
-        context.config.get('TC_AWS_MAX_RETRY')
+        context.config.get('TC_AWS_MAX_RETRY'),
+        role_arn=role_cfg['role_arn'],
+        role_session_name=role_cfg['role_session_name'],
+        role_external_id=role_cfg['role_external_id'],
+        assume_role_duration=role_cfg['assume_role_duration'],
+        sts_endpoint=role_cfg['sts_endpoint'],
     )
 
     result = LoaderResult()

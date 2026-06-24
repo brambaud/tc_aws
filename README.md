@@ -121,25 +121,55 @@ TC_AWS_RANDOMIZE_KEYS=False # Adds some randomization in the S3 keys for the Sto
 TC_AWS_ROOT_IMAGE_NAME='root_image' # Sets a default name for requested images ending with a trailing /. Those images will be stored in result_storage and storage under the name set in this configuration.
 ```
 
-### STS Assume Role settings
+### STS Assume Role settings (per service)
 
-These settings are optional. When `TC_AWS_ROLE_ARN` is not set, tc_aws uses the default AWS credential chain (environment variables, IAM instance profile, etc.) as before.
+These settings are optional. When a service-level `ROLE_ARN` is not set, that service uses the default AWS credential chain (environment variables, IAM instance profile, etc.).
 
-When `TC_AWS_ROLE_ARN` is set, tc_aws calls STS `AssumeRole` before each S3 operation and caches the temporary credentials until they are close to expiry (within 5 minutes). This allows Thumbor to access S3 buckets in other AWS accounts or via role delegation.
+When a `ROLE_ARN` is set for a service, tc_aws calls STS `AssumeRole` before each S3 operation for that service and caches the temporary credentials until they are close to expiry (within 5 minutes). Each service is configured independently, so a single Thumbor instance can use different roles for the loader, storage, and result storage.
+
+#### Loader
 
 ```.ini
-# IAM role ARN to assume for S3 access. Enables STS assume role when set.
-TC_AWS_ROLE_ARN=''
+TC_AWS_LOADER_ROLE_ARN=''
+TC_AWS_LOADER_ROLE_SESSION_NAME='thumbor-session'
+TC_AWS_LOADER_ROLE_EXTERNAL_ID=''
+TC_AWS_LOADER_ASSUME_ROLE_DURATION_SECONDS=None
+TC_AWS_LOADER_STS_ENDPOINT=None
+```
 
-# Session name used in STS assume role calls.
-TC_AWS_ROLE_SESSION_NAME='thumbor-session'
+#### Storage
 
-# External ID for cross-account role assumption (optional).
-TC_AWS_ROLE_EXTERNAL_ID=''
+```.ini
+TC_AWS_STORAGE_ROLE_ARN=''
+TC_AWS_STORAGE_ROLE_SESSION_NAME='thumbor-session'
+TC_AWS_STORAGE_ROLE_EXTERNAL_ID=''
+TC_AWS_STORAGE_ASSUME_ROLE_DURATION_SECONDS=None
+TC_AWS_STORAGE_STS_ENDPOINT=None
+```
 
-# Duration in seconds for the assumed role credentials.
-# When not set, AWS applies its own default (currently 3600).
-TC_AWS_ASSUME_ROLE_DURATION_SECONDS=None
+#### Result Storage
+
+```.ini
+TC_AWS_RESULT_STORAGE_ROLE_ARN=''
+TC_AWS_RESULT_STORAGE_ROLE_SESSION_NAME='thumbor-session'
+TC_AWS_RESULT_STORAGE_ROLE_EXTERNAL_ID=''
+TC_AWS_RESULT_STORAGE_ASSUME_ROLE_DURATION_SECONDS=None
+TC_AWS_RESULT_STORAGE_STS_ENDPOINT=None
+```
+
+Parameter meanings (same for all three services):
+
+- `*_ROLE_ARN`: IAM role ARN to assume. Enables STS assume role when non-empty.
+- `*_ROLE_SESSION_NAME`: session name used in STS assume role calls.
+- `*_ROLE_EXTERNAL_ID`: external ID for cross-account role assumption (optional).
+- `*_ASSUME_ROLE_DURATION_SECONDS`: credential lifetime in seconds. When not set, AWS applies its own default (currently 3600).
+- `*_STS_ENDPOINT`: custom STS endpoint URL. When not set, the AWS global STS endpoint is used.
+
+Example: loader reads from a cross-account bucket using a dedicated role, while storage and result storage use the instance profile.
+
+```.ini
+TC_AWS_LOADER_ROLE_ARN='arn:aws:iam::111122223333:role/thumbor-loader-role'
+TC_AWS_LOADER_ROLE_SESSION_NAME='thumbor-loader'
 ```
 
 ## Troubleshooting
